@@ -6,6 +6,7 @@ from computer_vision.lab.models import baseline
 
 IMAGE_SIZE = (512, 512)
 
+
 def main():
     FLAGS = flags.FLAGS
 
@@ -20,7 +21,8 @@ def main():
     dev_ds, _ = build_dataset(split='validation', **dataset_kwargs)
     test_ds, _ = build_dataset(split='test', **dataset_kwargs)
 
-    config = baseline.ClassifierWithBackboneConfig(num_classes=102)
+    config = baseline.ClassifierWithBackboneConfig(num_classes=info.features['label'].num_classes)
+    # num_classes from info
     augmentation = get_data_augmenter()
     model = baseline.ClassifierWithBackbone(config=config, augmentation=augmentation)
     model.build()

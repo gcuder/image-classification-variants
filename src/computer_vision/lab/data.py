@@ -3,8 +3,6 @@ from typing import Optional, Tuple
 import tensorflow_datasets as tfds
 import tensorflow as tf
 
-import matplotlib.pyplot as plt
-
 
 def build_dataset(split: str,
                   image_size: Tuple[int, int],
@@ -12,14 +10,17 @@ def build_dataset(split: str,
                   dataset_cards: str = 'oxford_flowers102',
                   batch_size: int = 256,
                   shuffle_buffer: Optional[int] = None,
-                  repeat: bool=False) -> tf.data.Dataset:
+                  repeat: bool = False) -> tf.data.Dataset:
     is_train = split == "train"
     map_kwargs = dict(num_parallel_calls=tf.data.AUTOTUNE)
-    dataset, info = tfds.load(dataset_cards,
-                              split=split,
-                              as_supervised=True,
-                              data_dir=data_dir,
-                              with_info=True)
+    _, info = tfds.load(dataset_cards,
+                        split=split,
+                        data_dir=data_dir,
+                        with_info=True)
+    dataset = tfds.load(dataset_cards,
+                        split=split,
+                        data_dir=data_dir,
+                        as_supervised=True)
 
     if is_train and shuffle_buffer is not None:
         dataset = dataset.shuffle(shuffle_buffer)
@@ -34,7 +35,6 @@ def build_dataset(split: str,
 
 
 if __name__ == '__main__':
-    train_ds = build_dataset(split='train', image_size=(512, 512))
-    for image, label in train_ds.take(10):
-        plt.imshow(image[0].numpy().astype("uint8"))
-        plt.show()
+    train_ds, info = build_dataset(split='train', image_size=(512, 512))
+
+    print('all done')
