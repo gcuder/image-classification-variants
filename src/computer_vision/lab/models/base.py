@@ -64,6 +64,8 @@ class Model(tf.keras.Model, abc.ABC):
     def build(self, input_shape=None):
         if input_shape is not None:
             super(Model, self).build(input_shape=input_shape)
+            if self._augmentation is not None:
+                self._augmentation.build(input_shape)
 
         if self.built:
             return
@@ -73,6 +75,8 @@ class Model(tf.keras.Model, abc.ABC):
         input = tf.random.uniform(shape=(2, 512, 512, 3))
         # noinspection PyCallingNonCallable
         self(inputs=input)
+        if self._augmentation is not None:
+            self._augmentation(input)
 
 
 class ModelWithBackbone(Model):
