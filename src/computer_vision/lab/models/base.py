@@ -7,7 +7,6 @@ import abc
 
 class ModelConfig(BaseModel):
     num_classes: int
-    rescaling_factor: float = 1.0 / 255
     output_dropout_rate: float = 0.5
 
 
@@ -18,18 +17,15 @@ class Model(tf.keras.Model, abc.ABC):
     def __init__(self, config: ModelConfig, **kwargs):
         super(Model, self).__init__(**kwargs)
         self._num_classes = config.num_classes
-        self._rescaling_factor = config.rescaling_factor
         self._output_dropout_rate = config.output_dropout_rate
 
         if self._num_classes == 2:
-            output_activation = "sigmoid"
             output_units = 1
         else:
-            output_activation = "softmax"
             output_units = self._num_classes
 
         self._cls_dropout = tf.keras.layers.Dropout(self._output_dropout_rate)
-        self._cls_head = tf.keras.layers.Dense(activation=output_activation, units=output_units)
+        self._cls_head = tf.keras.layers.Dense(units=output_units)
 
     def call(self, inputs, training=None, mask=None):
         """
@@ -44,9 +40,9 @@ class Model(tf.keras.Model, abc.ABC):
         x = self._top(inputs=x, training=training)
         return x
 
+    # noinspection PyMethodMayBeStatic
     def _input_processor(self, inputs, training=None):
-        x = tf.keras.layers.Rescaling(self._rescaling_factor)(inputs)
-        return x
+        return inputs
 
     @abc.abstractmethod
     def _body(self, inputs, training=None) -> tf.Tensor:

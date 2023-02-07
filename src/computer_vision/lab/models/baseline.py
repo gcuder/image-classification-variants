@@ -1,12 +1,13 @@
-from typing import List
+from typing import Any, List, Mapping, Text
 
 import tensorflow as tf
 from computer_vision.lab.models.base import Model, ModelConfig, ModelWithBackbone
 from computer_vision.lab.layers import ConvolutionalBlock
-
+from computer_vision import registry
 
 class BaselineClassifierConfig(ModelConfig):
     num_layers: int = 3
+    rescaling_factor: float = 1.0 / 255
     filters: List[int] = [32, 64, 128]
 
 
@@ -17,6 +18,7 @@ class BaselineClassifier(Model):
         self._num_layers = config.num_layers
         self._filters = config.filters
 
+        self._rescaling_layer = tf.keras.layers.Rescaling(config.rescaling_factor)
         if len(self._filters) != self._num_layers:
             raise ValueError()
 
@@ -30,6 +32,9 @@ class BaselineClassifier(Model):
             self._conv_layers.append(conv_block)
         self._flatten = tf.keras.layers.Flatten()
 
+    def _input_processor(self, inputs, training=None):
+        return self._rescaling_layer(inputs)
+
     def _body(self, inputs, training=None) -> tf.Tensor:
         x = inputs
         for layer in self._conv_layers:
@@ -38,16 +43,25 @@ class BaselineClassifier(Model):
         return x
 
 
-class EfficientNetClassifierConfig(ModelConfig):
-    pass
+class ClassifierWithBackboneConfig(ModelConfig):
+    backbone: str = 'efficient_net_b0'
+    backbone_kwargs: Mapping[Text, Any] = {
+        'trainable': True,
+        'weights': None
+    }
 
 
-class EfficientNetClassifier(ModelWithBackbone):
-    def __init__(self, config: EfficientNetClassifierConfig):
-        super(EfficientNetClassifier, self).__init__(config=config)
+class ClassifierWithBackbone(ModelWithBackbone):
+    def __init__(self, config: ClassifierWithBackboneConfig):
+        super(ClassifierWithBackbone, self).__init__(config=config)
+        self._backbone = registry.backbones(config.backbone, **config.backbone_kwargs)
 
 
 if __name__ == '__main__':
-    model = BaselineClassifier(config=BaselineClassifierConfig(num_classes=10))
+    model = ClassifierWithBackbone(config=ClassifierWithBackboneConfig(num_classes=10))
     model.build()
     model.summary()
+
+    input = tf.random.uniform(shape=(2, 512, 512, 3))
+    x = model(input)
+    print(x)
