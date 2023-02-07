@@ -1,9 +1,10 @@
-from typing import Any, List, Mapping, Text
+from typing import Any, List, Mapping, Optional, Text
 
 import tensorflow as tf
 from computer_vision.lab.models.base import Model, ModelConfig, ModelWithBackbone
 from computer_vision.lab.layers import ConvolutionalBlock
 from computer_vision import registry
+
 
 class BaselineClassifierConfig(ModelConfig):
     num_layers: int = 3
@@ -52,8 +53,8 @@ class ClassifierWithBackboneConfig(ModelConfig):
 
 
 class ClassifierWithBackbone(ModelWithBackbone):
-    def __init__(self, config: ClassifierWithBackboneConfig):
-        super(ClassifierWithBackbone, self).__init__(config=config)
+    def __init__(self, config: ClassifierWithBackboneConfig, augmentation: Optional[tf.keras.Model] = None, **kwargs):
+        super(ClassifierWithBackbone, self).__init__(config=config, augmentation=augmentation, **kwargs)
         self._backbone = registry.backbones(config.backbone, **config.backbone_kwargs)
 
 

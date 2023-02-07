@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional, Union
 
 import tensorflow as tf
 from pydantic import BaseModel
@@ -14,10 +14,12 @@ class Model(tf.keras.Model, abc.ABC):
     """ TODO
     """
 
-    def __init__(self, config: ModelConfig, **kwargs):
+    def __init__(self, config: ModelConfig, augmentation: Optional[tf.keras.Model] = None, **kwargs):
         super(Model, self).__init__(**kwargs)
         self._num_classes = config.num_classes
         self._output_dropout_rate = config.output_dropout_rate
+
+        self._augmentation = augmentation
 
         if self._num_classes == 2:
             output_units = 1
@@ -40,9 +42,11 @@ class Model(tf.keras.Model, abc.ABC):
         x = self._top(inputs=x, training=training)
         return x
 
-    # noinspection PyMethodMayBeStatic
     def _input_processor(self, inputs, training=None):
-        return inputs
+        x = inputs
+        if self._augmentation is not None and training:
+            x = self._augmentation(x, training=training)
+        return x
 
     @abc.abstractmethod
     def _body(self, inputs, training=None) -> tf.Tensor:
@@ -77,8 +81,8 @@ class ModelWithBackbone(Model):
     """
     _backbone: Union[tf.keras.layers.Layer, tf.keras.Model]
 
-    def __init__(self, config: ModelConfig):
-        super(ModelWithBackbone, self).__init__(config=config)
+    def __init__(self, config: ModelConfig, augmentation: Optional[tf.keras.Model] = None, **kwargs):
+        super(ModelWithBackbone, self).__init__(config=config, augmentation=augmentation, **kwargs)
 
     def _body(self, inputs, training=None) -> tf.Tensor:
         return self._backbone(inputs)
