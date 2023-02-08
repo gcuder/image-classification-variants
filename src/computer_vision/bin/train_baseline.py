@@ -46,12 +46,13 @@ def main(_):
                tf.keras.metrics.Precision(),
                tf.keras.metrics.Recall()]
     loss = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
+    callbacks = [tf.keras.callbacks.EarlyStopping(restore_best_weights=True, patience=2)]
     model.compile(
         optimizer="adam", loss=loss, metrics=metrics
     )
 
     epochs = 40
-    hist = model.fit(train_ds, epochs=epochs, validation_data=dev_ds)
+    hist = model.fit(train_ds, epochs=epochs, validation_data=dev_ds, callbacks=callbacks)
     results = model.evaluate(test_ds, return_dict=True)
     print(results)
 
