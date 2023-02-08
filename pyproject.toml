@@ -3,6 +3,7 @@ name = "image_classification_variants"
 version = "0.1.0"
 description = ""
 authors = ["gcuder <gerald@itranslate.com>"]
+packages = [{ include = "computer_vision", from = "src" }]
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12"
