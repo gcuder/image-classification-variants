@@ -1,40 +1,56 @@
 from absl import app, flags, logging  # noqa: E402
+import tensorflow as tf
+import tensorflow_addons as tfa
 
 from computer_vision.lab.augmentation import get_data_augmenter
 from computer_vision.lab.data import build_dataset
 from computer_vision.lab.models import baseline
 
-IMAGE_SIZE = (512, 512)
+IMAGE_SIZE = (224, 224)
 
 from computer_vision.lab.models.backbones import EfficientNet
+
+
 def main(_):
     FLAGS = flags.FLAGS
 
     dataset_kwargs = dict(
+        train_dev_split=0.25,
         dataset_cards=FLAGS.dataset_cards,
         batch_size=FLAGS.batch_size,
         data_dir=FLAGS.data_dir,
         image_size=IMAGE_SIZE,
         shuffle_buffer=FLAGS.shuffle_buffer
     )
-    train_ds, info = build_dataset(split='train', **dataset_kwargs)
-    dev_ds, _ = build_dataset(split='validation', **dataset_kwargs)
-    test_ds, _ = build_dataset(split='test', **dataset_kwargs)
+    datasets, info = build_dataset(**dataset_kwargs)
+
+    train_ds = datasets['train']
+    dev_ds = datasets['validation']
+    test_ds = datasets['test']
 
     config = baseline.ClassifierWithBackboneConfig(num_classes=info.features['label'].num_classes)
     augmentation = get_data_augmenter()
     model = baseline.ClassifierWithBackbone(config=config,
                                             augmentation=augmentation,
                                             backbone=EfficientNet(variant='EfficientNetV2S',
-                                                                  weights=None))
+                                                                  weights=None,
+                                                                  trainable=True,
+                                                                  pooling='avg'))
     model.build()
     model.summary()
 
+    metrics = [tf.keras.metrics.CategoricalAccuracy(),
+               tfa.metrics.F1Score(num_classes=config.num_classes, average='micro', name='micro_f1'),
+               tfa.metrics.F1Score(num_classes=config.num_classes, average='macro', name='macro_f1'),
+               tfa.metrics.F1Score(num_classes=config.num_classes, average='weighted', name='weighted_f1'),
+               tf.keras.metrics.Precision(),
+               tf.keras.metrics.Recall()]
+    loss = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
     model.compile(
-        optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"]
+        optimizer="adam", loss=loss, metrics=metrics
     )
 
-    epochs = 10
+    epochs = 40
     hist = model.fit(train_ds, epochs=epochs, validation_data=dev_ds)
     results = model.evaluate(test_ds, return_dict=True)
     print(results)
@@ -68,9 +84,6 @@ def define_flags():
         default=256,
         help=""
     )
-
-
-
 
 
 if __name__ == '__main__':

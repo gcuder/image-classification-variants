@@ -21,12 +21,17 @@ def get_data_augmenter(
     data_augmentation = tf.keras.Sequential(
         [
             # tf.keras.layers.Normalization(),
-            tf.keras.layers.Resizing(resize_image_size, resize_image_size),
-            tf.keras.layers.RandomFlip(flip_mode),
+            # tf.keras.layers.Resizing(resize_image_size, resize_image_size),
             tf.keras.layers.RandomRotation(factor=rotation_factor),
+            tf.keras.layers.RandomTranslation(height_factor=0.1, width_factor=0.1),
+            tf.keras.layers.RandomFlip(flip_mode),
             tf.keras.layers.RandomZoom(
                 height_factor=zoom_height_factor, width_factor=zoom_width_factor
             ),
+            # layers.RandomRotation(factor=0.15),
+            # layers.RandomTranslation(height_factor=0.1, width_factor=0.1),
+            # layers.RandomFlip(),
+            # layers.RandomContrast(factor=0.1),
         ],
         name="data_augmentation",
     )
