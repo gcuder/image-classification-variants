@@ -1,18 +1,18 @@
 from typing import Any, List, Mapping, Optional, Text
 
 import tensorflow as tf
-from computer_vision.lab.models.base import Model, ModelConfig, ModelWithBackbone
+from computer_vision.lab.models.base import ClassficationModelConfig, ClassificationModel
 from computer_vision.lab.layers import ConvolutionalBlock
 from computer_vision import registry
 
 
-class BaselineClassifierConfig(ModelConfig):
+class BaselineClassifierConfig(ClassficationModelConfig):
     num_layers: int = 3
     rescaling_factor: float = 1.0 / 255
     filters: List[int] = [32, 64, 128]
 
 
-class BaselineClassifier(Model):
+class BaselineClassifier(ClassificationModel):
     def __init__(self, config: BaselineClassifierConfig):
         super(BaselineClassifier, self).__init__(config=config)
 
@@ -33,8 +33,11 @@ class BaselineClassifier(Model):
             self._conv_layers.append(conv_block)
         self._flatten = tf.keras.layers.Flatten()
 
-    def _input_processor(self, inputs, training=None):
-        return self._rescaling_layer(inputs)
+    def _bottom(self, inputs, training=None):
+        x = inputs
+        x = self._rescaling_layer(x)
+        x = super(BaselineClassifier, self)._bottom(x)
+        return x
 
     def _body(self, inputs, training=None) -> tf.Tensor:
         x = inputs
@@ -44,25 +47,29 @@ class BaselineClassifier(Model):
         return x
 
 
-class ClassifierWithBackboneConfig(ModelConfig):
-    backbone: str = 'efficient_net_b0'
-    backbone_kwargs: Mapping[Text, Any] = {
-        'trainable': True,
-        'weights': None
-    }
+class ClassifierWithBackboneConfig(ClassficationModelConfig):
+    pass
 
 
-class ClassifierWithBackbone(ModelWithBackbone):
-    def __init__(self, config: ClassifierWithBackboneConfig, augmentation: Optional[tf.keras.Model] = None, **kwargs):
-        super(ClassifierWithBackbone, self).__init__(config=config, augmentation=augmentation, **kwargs)
-        self._backbone = registry.backbones(config.backbone, **config.backbone_kwargs)
+class ClassifierWithBackbone(ClassificationModel):
+    def __init__(self,
+                 config: ClassifierWithBackboneConfig,
+                 backbone: tf.keras.Model,
+                 augmentation: Optional[tf.keras.Model] = None,
+                 **kwargs):
+        super(ClassifierWithBackbone, self).__init__(config=config,
+                                                     augmentation=augmentation,
+                                                     backbone=backbone,
+                                                     **kwargs)
 
+    def _body(self, inputs, training=None) -> tf.Tensor:
+        return inputs
 
-if __name__ == '__main__':
-    model = ClassifierWithBackbone(config=ClassifierWithBackboneConfig(num_classes=10))
-    model.build()
-    model.summary()
-
-    input = tf.random.uniform(shape=(2, 512, 512, 3))
-    x = model(input)
-    print(x)
+# if __name__ == '__main__':
+#     model = ClassifierWithBackbone(config=ClassifierWithBackboneConfig(num_classes=10))
+#     model.build()
+#     model.summary()
+#
+#     input = tf.random.uniform(shape=(2, 512, 512, 3))
+#     x = model(input)
+#     print(x)

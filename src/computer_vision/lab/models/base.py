@@ -6,20 +6,41 @@ import abc
 
 
 class ModelConfig(BaseModel):
+    pass
+
+
+class AbstractModel(tf.keras.Model, abc.ABC):
+    """Base class to derive any model in this repository.
+
+    The user must ensure that all necessary parts, such as `call`, `get_config` and
+    `from_config` are implemented properly.
+    """
+
+    def __init__(self, config: ModelConfig, **kwargs):
+        super(AbstractModel, self).__init__(**kwargs)
+        self.config = config
+
+
+class ClassficationModelConfig(ModelConfig):
     num_classes: int
     output_dropout_rate: float = 0.5
 
 
-class Model(tf.keras.Model, abc.ABC):
+class ClassificationModel(AbstractModel, abc.ABC):
     """ TODO
     """
 
-    def __init__(self, config: ModelConfig, augmentation: Optional[tf.keras.Model] = None, **kwargs):
-        super(Model, self).__init__(**kwargs)
+    def __init__(self,
+                 config: ClassficationModelConfig,
+                 augmentation: Optional[tf.keras.Model] = None,
+                 backbone: Optional[tf.keras.Model] = None,
+                 **kwargs):
+        super(ClassificationModel, self).__init__(config=config, **kwargs)
         self._num_classes = config.num_classes
         self._output_dropout_rate = config.output_dropout_rate
 
         self._augmentation = augmentation
+        self._backbone = backbone
 
         if self._num_classes == 2:
             output_units = 1
@@ -37,15 +58,18 @@ class Model(tf.keras.Model, abc.ABC):
         :return:
         """
         x = inputs
-        x = self._input_processor(inputs=x, training=training)
+        x = self._bottom(inputs=x, training=training)
         x = self._body(inputs=x, training=training)
         x = self._top(inputs=x, training=training)
         return x
 
-    def _input_processor(self, inputs, training=None):
+    def _bottom(self, inputs, training=None):
         x = inputs
         if self._augmentation is not None and training:
             x = self._augmentation(x, training=training)
+
+        if self._backbone:
+            x = self._backbone(x)
         return x
 
     @abc.abstractmethod
@@ -63,9 +87,11 @@ class Model(tf.keras.Model, abc.ABC):
 
     def build(self, input_shape=None):
         if input_shape is not None:
-            super(Model, self).build(input_shape=input_shape)
+            super(ClassificationModel, self).build(input_shape=input_shape)
             if self._augmentation is not None:
                 self._augmentation.build(input_shape)
+            if self._backbone is not None:
+                self._backbone.build(input_shape)
 
         if self.built:
             return
@@ -78,15 +104,20 @@ class Model(tf.keras.Model, abc.ABC):
         if self._augmentation is not None:
             self._augmentation(input)
 
+        if self._backbone is not None:
+            self._backbone(input)
 
-class ModelWithBackbone(Model):
-    """ TODO
-
-    """
-    _backbone: Union[tf.keras.layers.Layer, tf.keras.Model]
-
-    def __init__(self, config: ModelConfig, augmentation: Optional[tf.keras.Model] = None, **kwargs):
-        super(ModelWithBackbone, self).__init__(config=config, augmentation=augmentation, **kwargs)
-
-    def _body(self, inputs, training=None) -> tf.Tensor:
-        return self._backbone(inputs)
+# class ModelWithBackbone(Model):
+#     """ TODO
+#
+#     """
+#     _backbone: Union[tf.keras.layers.Layer, tf.keras.Model]
+#
+#     def __init__(self,
+#                  config: ModelConfig,
+#                  augmentation: Optional[tf.keras.Model] = None,
+#                  **kwargs):
+#         super(ModelWithBackbone, self).__init__(config=config, augmentation=augmentation, **kwargs)
+#
+#     def _body(self, inputs, training=None) -> tf.Tensor:
+#         return self._backbone(inputs)

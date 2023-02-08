@@ -6,25 +6,27 @@ from computer_vision.lab.models import baseline
 
 IMAGE_SIZE = (512, 512)
 
-
-def main():
+from computer_vision.lab.models.backbones import EfficientNet
+def main(_):
     FLAGS = flags.FLAGS
 
     dataset_kwargs = dict(
-        dataset_card=FLAGS.dataset_card,
+        dataset_cards=FLAGS.dataset_cards,
         batch_size=FLAGS.batch_size,
         data_dir=FLAGS.data_dir,
         image_size=IMAGE_SIZE,
-        shuffle_buffer=FLAGS.shuffle_buffeer
+        shuffle_buffer=FLAGS.shuffle_buffer
     )
     train_ds, info = build_dataset(split='train', **dataset_kwargs)
     dev_ds, _ = build_dataset(split='validation', **dataset_kwargs)
     test_ds, _ = build_dataset(split='test', **dataset_kwargs)
 
     config = baseline.ClassifierWithBackboneConfig(num_classes=info.features['label'].num_classes)
-    # num_classes from info
     augmentation = get_data_augmenter()
-    model = baseline.ClassifierWithBackbone(config=config, augmentation=augmentation)
+    model = baseline.ClassifierWithBackbone(config=config,
+                                            augmentation=augmentation,
+                                            backbone=EfficientNet(variant='EfficientNetV2S',
+                                                                  weights=None))
     model.build()
     model.summary()
 
@@ -39,7 +41,36 @@ def main():
 
 
 def define_flags():
-    pass
+    flags.DEFINE_string(
+        name="model_root", required=False, default=None, help="Directory, where all model results are saved!"
+    )
+
+    flags.DEFINE_string(
+        name="data_dir", default=None, help="Directory, where the training data is stored"
+    )
+
+    flags.DEFINE_string(
+        name="config", required=False, default=None, help="Directory, where all model results are saved!"
+    )
+
+    flags.DEFINE_string(
+        name="dataset_cards", default="oxford_flowers102", help=""
+    )
+
+    flags.DEFINE_integer(
+        name="batch_size",
+        default=64,
+        help=""
+    )
+
+    flags.DEFINE_integer(
+        name="shuffle_buffer",
+        default=256,
+        help=""
+    )
+
+
+
 
 
 if __name__ == '__main__':

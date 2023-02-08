@@ -4,7 +4,7 @@ from typing import Any, Mapping, Union
 import tensorflow as tf
 
 
-class Backbone(tf.keras.layers.Layer, abc.ABC):
+class Backbone(tf.keras.Model, abc.ABC):
     """ TODO
     """
     _backbone: Union[tf.keras.layers.Layer, tf.keras.Model]
@@ -12,7 +12,6 @@ class Backbone(tf.keras.layers.Layer, abc.ABC):
     def __init__(self, trainable: bool = True, **kwargs):
         super(Backbone, self).__init__(**kwargs)
         self._trainable = trainable
-        self._backbone.trainable = trainable
 
     def call(self, inputs, *args, **kwargs):
         """ TODO
