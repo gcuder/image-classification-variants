@@ -3,7 +3,6 @@ from typing import Any, List, Mapping, Optional, Text
 import tensorflow as tf
 from computer_vision.lab.models.base import ClassficationModelConfig, ClassificationModel
 from computer_vision.lab.layers import ConvolutionalBlock
-from computer_vision import registry
 
 
 class BaselineClassifierConfig(ClassficationModelConfig):
