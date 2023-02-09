@@ -100,12 +100,13 @@ class ClassificationModel(AbstractModel, abc.ABC):
 
         input = tf.random.uniform(shape=(2, 512, 512, 3))
         # noinspection PyCallingNonCallable
-        self(inputs=input)
         if self._augmentation is not None:
             self._augmentation(input)
 
         if self._backbone is not None:
             self._backbone(input)
+        self(inputs=input)
+
 
 # class ModelWithBackbone(Model):
 #     """ TODO

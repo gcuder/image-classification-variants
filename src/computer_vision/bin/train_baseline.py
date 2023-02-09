@@ -5,10 +5,10 @@ import tensorflow_addons as tfa
 from computer_vision.lab.augmentation import get_data_augmenter
 from computer_vision.lab.data import build_dataset
 from computer_vision.lab.models import baseline
+from computer_vision.lab.models.backbones import BACKBONES, backbones
+from computer_vision.lab.utils import unfreeze_model
 
 IMAGE_SIZE = (224, 224)
-
-from computer_vision.lab.models.backbones import EfficientNet
 
 
 def main(_):
@@ -20,7 +20,8 @@ def main(_):
         batch_size=FLAGS.batch_size,
         data_dir=FLAGS.data_dir,
         image_size=IMAGE_SIZE,
-        shuffle_buffer=FLAGS.shuffle_buffer
+        shuffle_buffer=FLAGS.shuffle_buffer,
+        one_hot_labels = False
     )
     datasets, info = build_dataset(**dataset_kwargs)
 
@@ -30,12 +31,17 @@ def main(_):
 
     config = baseline.ClassifierWithBackboneConfig(num_classes=info.features['label'].num_classes)
     augmentation = get_data_augmenter()
+    backbone = FLAGS.backbone
+    if backbone is not None:
+        backbone = backbones(name=backbone, variant='EfficientNetV2S',
+                             weights='imagenet',
+                             trainable=False,
+                             pooling='avg')
+    # backbone.unfreeze_model(n=20, from_top=False)
+
     model = baseline.ClassifierWithBackbone(config=config,
                                             augmentation=augmentation,
-                                            backbone=EfficientNet(variant='EfficientNetV2S',
-                                                                  weights='imagenet',
-                                                                  trainable=False,
-                                                                  pooling='avg'))
+                                            backbone=backbone)
     model.build()
     model.summary()
 
@@ -47,8 +53,9 @@ def main(_):
                tf.keras.metrics.Recall()]
     loss = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
     callbacks = [tf.keras.callbacks.EarlyStopping(restore_best_weights=True, patience=2)]
+    optimizer = tf.keras.optimizers.Adam(learning_rate=1e-4)
     model.compile(
-        optimizer="adam", loss=loss, metrics=metrics
+        optimizer=optimizer, loss=loss, metrics=metrics
     )
 
     epochs = 40
@@ -59,15 +66,16 @@ def main(_):
 
 def define_flags():
     flags.DEFINE_string(
-        name="model_root", required=False, default=None, help="Directory, where all model results are saved!"
+        name="model_dir", required=False, default=None, help="Directory, where all model results are saved!"
     )
 
     flags.DEFINE_string(
         name="data_dir", default=None, help="Directory, where the training data is stored"
     )
 
-    flags.DEFINE_string(
-        name="config", required=False, default=None, help="Directory, where all model results are saved!"
+    flags.DEFINE_enum(
+        name="backbone", default=None, enum_values=list(BACKBONES.keys()),
+        help=""
     )
 
     flags.DEFINE_string(

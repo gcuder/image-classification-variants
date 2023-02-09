@@ -47,6 +47,8 @@ class EfficientNet(Backbone):
                                             pooling=pooling,
                                             include_top=False)
 
+        self._n_layers = len(self._backbone.layers)
+
     def input_processor(self, inputs: tf.Tensor) -> tf.Tensor:
         """ TODO
         """
@@ -56,3 +58,13 @@ class EfficientNet(Backbone):
         """ TODO
         """
         return inputs
+
+    def unfreeze_model(self, n: int, from_top: bool = False):
+        self.trainable = True
+        if n > self._n_layers:
+            n = self._n_layers
+
+        r = range(-1, -n) if from_top else range(0, n)
+        for i in r:
+            if not isinstance(self._backbone.layers[i], tf.keras.layers.BatchNormalization):
+                self._backbone.layers[i].trainable = True

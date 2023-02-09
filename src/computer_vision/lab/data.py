@@ -17,7 +17,7 @@ def _get_datasets(dataset_cards: str,
     test_ds = datasets['test']
     if 'validation' not in datasets.keys():
         num_samples = int(train_ds.cardinality())
-        dev_samples = int(num_samples*train_dev_split)
+        dev_samples = int(num_samples * train_dev_split)
         # train_ds, dev_ds = tf.keras.utils.split_dataset(dataset=train_ds,
         #                                                 left_size=1 - train_dev_split,
         #                                                 right_size=train_dev_split)
@@ -35,6 +35,7 @@ def _get_datasets(dataset_cards: str,
 
 def build_dataset(dataset_cards: str,
                   image_size: Tuple[int, int],
+                  one_hot_labels: bool = False,
                   train_dev_split: float = 0.1,
                   data_dir: str = None,
                   batch_size: int = 256,
@@ -58,11 +59,14 @@ def build_dataset(dataset_cards: str,
             dataset = dataset.repeat()
 
         # Resize the images
-        dataset = dataset.map(lambda image, label: (tf.image.resize(image, image_size), tf.one_hot(label, NUM_CLASSES)))
+        # dataset = dataset.map(lambda image, label: (tf.image.resize(image, image_size), tf.one_hot(label,
+        # NUM_CLASSES)))
+        dataset = dataset.map(lambda image, label: (tf.image.resize(image, image_size), label))
+        if one_hot_labels:
+            dataset = dataset.map(lambda image, label: (image, tf.one_hot(label, NUM_CLASSES)))
         dataset = dataset.batch(batch_size, drop_remainder=not is_train, **map_kwargs)
         splits.update({split: dataset})
     return splits, info
-
 
 # if __name__ == '__main__':
 #     datasets, info = build_dataset(dataset_cards=image_size=(512, 512))
