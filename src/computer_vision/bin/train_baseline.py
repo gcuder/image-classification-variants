@@ -33,8 +33,8 @@ def main(_):
     model = baseline.ClassifierWithBackbone(config=config,
                                             augmentation=augmentation,
                                             backbone=EfficientNet(variant='EfficientNetV2S',
-                                                                  weights=None,
-                                                                  trainable=True,
+                                                                  weights='imagenet',
+                                                                  trainable=False,
                                                                   pooling='avg'))
     model.build()
     model.summary()
