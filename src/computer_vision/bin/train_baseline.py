@@ -33,10 +33,14 @@ def main(_):
     augmentation = get_data_augmenter()
     backbone = FLAGS.backbone
     if backbone is not None:
-        backbone = backbones(name=backbone, variant='EfficientNetV2S',
-                             weights='imagenet',
-                             trainable=FLAGS.unfreeze_backbone,
-                             pooling='avg')
+        # backbone = backbones(name=backbone,
+        #                      variant='EfficientNetV2S',
+        #                      weights='imagenet',
+        #                      trainable=FLAGS.unfreeze_backbone,
+        #                      pooling='avg')
+        backbone = backbones(name=backbone,
+                             checkpoint='microsoft/cvt-13',
+                             trainable=FLAGS.unfreeze_backbone)
     # backbone.unfreeze_model(n=20, from_top=False)
 
     model = baseline.ClassifierWithBackbone(config=config,

@@ -1,7 +1,9 @@
 from .efficient_net import EfficientNet
+from .transformer import VisionTransformer
 
 BACKBONES = {
-    EfficientNet.__name__: EfficientNet
+    EfficientNet.__name__: EfficientNet,
+    VisionTransformer.__name__: VisionTransformer
 }
 
 
