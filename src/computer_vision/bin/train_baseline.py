@@ -21,7 +21,7 @@ def main(_):
         data_dir=FLAGS.data_dir,
         image_size=IMAGE_SIZE,
         shuffle_buffer=FLAGS.shuffle_buffer,
-        one_hot_labels = False
+        one_hot_labels=True
     )
     datasets, info = build_dataset(**dataset_kwargs)
 
@@ -35,7 +35,7 @@ def main(_):
     if backbone is not None:
         backbone = backbones(name=backbone, variant='EfficientNetV2S',
                              weights='imagenet',
-                             trainable=False,
+                             trainable=FLAGS.unfreeze_backbone,
                              pooling='avg')
     # backbone.unfreeze_model(n=20, from_top=False)
 
@@ -91,6 +91,12 @@ def define_flags():
     flags.DEFINE_integer(
         name="shuffle_buffer",
         default=256,
+        help=""
+    )
+
+    flags.DEFINE_bool(
+        name="unfreeze_backbone",
+        default=False,
         help=""
     )
 

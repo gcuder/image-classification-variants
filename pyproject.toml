@@ -15,6 +15,7 @@ transformers = "^4.26.0"
 scipy = "^1.10.0"
 matplotlib = "^3.6.3"
 coremltools = "^6.2"
+datasets = "^2.9.0"
 
 
 [tool.poetry.dev-dependencies]
